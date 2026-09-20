@@ -43,7 +43,7 @@ function createWindow() {
       nodeIntegration: false,
       spellcheck: false,
     },
-    icon: path.join(__dirname, 'build', 'icon.png'),
+    icon: path.join(__dirname, 'build', 'icon.ico'),
     title: 'WinLens',
     backgroundColor: '#0D0D14',
   });
@@ -133,6 +133,9 @@ function createTray() {
 
 // ── App Lifecycle ─────────────────────────────────────────────
 app.whenReady().then(() => {
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.alexmohit.winlens');
+  }
   createWindow();
   createTray();
   setupIPC();
