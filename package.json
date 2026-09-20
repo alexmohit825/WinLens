@@ -1,0 +1,44 @@
+{
+  "name": "winlens",
+  "version": "1.0.0",
+  "description": "AI assistant for any Windows application — press Alt+Shift+W to ask anything about any screen",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.alexmohit.winlens",
+    "productName": "WinLens",
+    "copyright": "Copyright 2026 A. Alex Mohit",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "author": {
+    "name": "A. Alex Mohit",
+    "email": "mohalex@gmail.com"
+  },
+  "license": "UNLICENSED"
+}

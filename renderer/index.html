@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src https://winlens-api.mohalex.workers.dev;" />
+  <title>WinLens</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Custom Titlebar ── -->
+  <div class="titlebar" role="banner">
+    <img src="../build/icon.png" class="titlebar-icon" alt="WinLens" />
+    <span class="titlebar-name">Win<span>Lens</span></span>
+    <span id="hotkey-display" class="titlebar-hotkey">Alt+Shift+W</span>
+    <div class="titlebar-actions">
+      <button id="btn-pin" class="titlebar-btn pin-active" title="Unpin (always on top)" aria-label="Toggle always on top">📌</button>
+      <button id="btn-hide" class="titlebar-btn close" title="Hide to tray" aria-label="Hide to tray">✕</button>
+    </div>
+  </div>
+
+  <!-- ── Scrollable Panel Body ── -->
+  <div id="panel-body" class="panel-body" role="main">
+
+    <!-- WELCOME STATE -->
+    <div id="welcome-section" class="welcome-state">
+      <img src="../build/icon.png" class="welcome-icon" alt="WinLens" />
+      <h1 class="welcome-title">Win<span>Lens</span></h1>
+      <p class="welcome-sub">AI assistant for any Windows application.<br>Press the hotkey to capture your screen and ask anything.</p>
+      <div class="welcome-hint">
+        <div class="hint-row">
+          <span class="hint-icon">⌨️</span>
+          <div class="hint-text"><strong>Global Hotkey</strong>Press <kbd id="hotkey-display-2">Alt+Shift+W</kbd> in any app to instantly capture your screen</div>
+        </div>
+        <div class="hint-row">
+          <span class="hint-icon">🎤</span>
+          <div class="hint-text"><strong>Voice Questions</strong>Speak complex questions hands-free — even technical ones</div>
+        </div>
+        <div class="hint-row">
+          <span class="hint-icon">💬</span>
+          <div class="hint-text"><strong>Multi-Turn</strong>Ask follow-ups on the same screenshot without recapturing</div>
+        </div>
+      </div>
+      <button id="btn-capture-welcome" class="btn-capture" style="margin-top:12px;max-width:260px;">
+        📷 Capture Screen Now
+      </button>
+      <p style="font-size:.7rem;color:var(--text-muted);margin-top:8px;">© 2026 A. Alex Mohit</p>
+    </div>
+
+    <!-- SCREENSHOT PREVIEW -->
+    <div id="screenshot-section" class="hidden">
+      <div id="screenshot-card" class="screenshot-card" role="button" title="Click to view full size" aria-label="Screenshot preview">
+        <img id="screenshot-img" src="" alt="Captured screen" />
+        <div class="screenshot-overlay"><span>🔍 View Full Size</span></div>
+        <div class="screenshot-meta">
+          <span id="screenshot-time" class="screenshot-time"></span>
+          <button id="btn-recapture" class="recapture-btn" title="Capture new screenshot">↺ Recapture</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE SELECTOR -->
+    <div id="mode-section" class="hidden">
+      <div class="mode-row" role="tablist" aria-label="Application mode">
+        <button class="mode-chip active" data-mode="windows"    role="tab">Windows</button>
+        <button class="mode-chip"        data-mode="excel"      role="tab">Excel</button>
+        <button class="mode-chip"        data-mode="office"     role="tab">Office</button>
+        <button class="mode-chip"        data-mode="browser"    role="tab">Browser</button>
+        <button class="mode-chip"        data-mode="enterprise" role="tab">Enterprise</button>
+        <button class="mode-chip"        data-mode="other"      role="tab">Other</button>
+      </div>
+    </div>
+
+    <!-- QUESTION INPUT -->
+    <div id="question-section" class="hidden">
+      <p class="question-label">Your Question</p>
+      <div class="question-wrapper">
+        <textarea id="question-input"
+          placeholder="e.g. What does this error mean? How do I find this setting?"
+          rows="3"
+          autocomplete="off" spellcheck="true"
+          aria-label="Enter your question"></textarea>
+        <div class="input-actions">
+          <button id="voice-btn" class="voice-btn" type="button" aria-label="Speak question">🎤 Speak</button>
+          <button id="btn-ask" class="btn-ask" type="button" aria-label="Ask WinLens">Ask WinLens ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK QUESTIONS -->
+    <div id="qq-section" class="hidden">
+      <p class="qqLabel">Quick Questions</p>
+      <div id="qq-pills" class="qq-pills" role="list"></div>
+    </div>
+
+    <!-- ANALYZING STATE -->
+    <div id="analyzing-section" class="analyzing-state hidden" aria-live="polite">
+      <div class="analyzing-orb"><span class="analyzing-orb-icon" aria-hidden="true">🔬</span></div>
+      <div class="analyzing-text">
+        <h3>Analyzing your screen…</h3>
+        <p>Reading the interface and preparing your answer</p>
+        <p id="analyzing-timer">0.0s</p>
+      </div>
+    </div>
+
+    <!-- RESPONSE -->
+    <div id="response-section" class="hidden" aria-live="polite">
+      <div id="response-question" class="response-question" role="note"></div>
+      <div class="response-card" style="margin-top:10px;">
+        <div class="ai-badge"><span class="ai-dot" aria-hidden="true"></span>WinLens AI</div>
+        <div id="response-content" class="response-content"></div>
+        <div class="response-actions">
+          <button id="btn-copy" class="btn-copy">📋 Copy</button>
+          <button id="btn-new-question" class="btn-ghost" style="font-size:.8rem;padding:7px 14px;">💬 New Question</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end panel-body -->
+
+  <!-- ── Follow-up Bar (shown with response) ── -->
+  <div id="followup-bar" class="followup-bar hidden" role="form" aria-label="Follow-up question">
+    <div class="followup-inner">
+      <textarea id="followup-input" placeholder="Ask a follow-up…" rows="1" autocomplete="off"></textarea>
+      <button id="followup-voice-btn" class="voice-btn" style="padding:6px 10px;font-size:.78rem;min-height:36px;">🎤</button>
+      <button id="followup-send" class="followup-send" type="button" aria-label="Send follow-up">↗</button>
+    </div>
+  </div>
+
+</div><!-- end app -->
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
