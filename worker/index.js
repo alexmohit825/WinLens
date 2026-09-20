@@ -11,7 +11,7 @@ const ALLOWED_ORIGINS = [
   'null',
 ];
 
-const GEMINI_MODEL = 'gemini-2.0-flash-exp';
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
 const SYSTEM_PROMPTS = {
   windows: `You are WinLens, an AI assistant helping users navigate any Windows application or operating system feature.
