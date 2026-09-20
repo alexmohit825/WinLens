@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 # Create with: wrangler kv:namespace create "RATE_LIMIT_WINLENS"
 # Then paste the returned id below:
 binding = "RATE_LIMIT"
-id = "REPLACE_WITH_KV_ID"
+id = "cdd14189144849b58882f9fbe838e2ea"
 
 [observability]
 enabled = true
