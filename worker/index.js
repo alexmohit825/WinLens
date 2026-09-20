@@ -11,8 +11,9 @@ const ALLOWED_ORIGINS = [
   'null',
 ];
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-3.8-flash';
 
+// ── System Prompts ───────────────────────────────────────────
 const SYSTEM_PROMPTS = {
   windows: `You are WinLens, an AI assistant helping users navigate any Windows application or operating system feature.
 The user has captured a screenshot of their Windows screen and needs help.
@@ -79,21 +80,6 @@ function jsonResp(data, status = 200, origin = '*') {
   });
 }
 
-function buildContents(imageBase64, question, history = []) {
-  const contents = [];
-  for (const msg of history) {
-    contents.push({ role: msg.role, parts: [{ text: msg.content }] });
-  }
-  contents.push({
-    role: 'user',
-    parts: [
-      { inline_data: { mime_type: 'image/jpeg', data: imageBase64 } },
-      { text: question || 'Describe what you see on this screen and explain how to use it.' },
-    ],
-  });
-  return contents;
-}
-
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || 'null';
@@ -109,29 +95,60 @@ export default {
     const { image_base64, question, mode = 'windows', history = [] } = body;
     if (!image_base64) return jsonResp({ error: 'image_base64 required' }, 400, origin);
     if (!env.GEMINI_API_KEY) return jsonResp({ error: 'API key not configured' }, 500, origin);
+
     const systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.windows;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
+    const interactionsUrl = `https://generativelanguage.googleapis.com/v1beta/interactions`;
+
+    const inputItems = [];
+    for (const h of history.slice(-8)) {
+      inputItems.push({ type: 'text', text: `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}` });
+    }
+    inputItems.push({
+      type: 'image',
+      data: image_base64,
+      mime_type: 'image/jpeg',
+    });
+    inputItems.push({
+      type: 'text',
+      text: question || 'Describe what you see on this screen and explain how to use it.',
+    });
+
     let geminiResp;
     try {
-      geminiResp = await fetch(geminiUrl, {
+      geminiResp = await fetch(interactionsUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': env.GEMINI_API_KEY,
+        },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: buildContents(image_base64, question, history.slice(-12)),
-          generationConfig: { temperature: 0.2, maxOutputTokens: 1200 },
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-          ],
+          model: GEMINI_MODEL,
+          system_instruction: systemPrompt,
+          input: inputItems,
         }),
       });
     } catch (err) { return jsonResp({ error: `Gemini unreachable: ${err.message}` }, 502, origin); }
-    if (!geminiResp.ok) return jsonResp({ error: `Gemini error ${geminiResp.status}` }, 502, origin);
+
+    if (!geminiResp.ok) {
+      const errText = await geminiResp.text();
+      return jsonResp({ error: `Gemini error ${geminiResp.status}: ${errText}` }, 502, origin);
+    }
+
     const data = await geminiResp.json();
-    const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    let answer = null;
+    if (Array.isArray(data?.steps)) {
+      for (const step of data.steps) {
+        if (step.type === 'model_output' && Array.isArray(step.content)) {
+          for (const part of step.content) {
+            if (part.type === 'text' && part.text) {
+              answer = part.text;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (!answer && data?.output_text) answer = data.output_text;
     if (!answer) return jsonResp({ error: 'No AI response. Try again.' }, 502, origin);
     return jsonResp({ answer, mode, remaining_queries: remaining }, 200, origin);
   },
