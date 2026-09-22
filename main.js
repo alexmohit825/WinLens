@@ -107,6 +107,22 @@ function setupIPC() {
   ipcMain.handle('get-hotkey', () => HOTKEY);
   ipcMain.handle('open-external', (_, url) => shell.openExternal(url));
   ipcMain.on('set-always-on-top', (_, val) => mainWindow?.setAlwaysOnTop(val));
+  ipcMain.handle('view-full-screenshot', (_, dataUrl) => {
+    if (!dataUrl) return;
+    const { workArea } = screen.getPrimaryDisplay();
+    const viewWin = new BrowserWindow({
+      width: Math.min(1200, workArea.width - 80),
+      height: Math.min(850, workArea.height - 80),
+      title: 'WinLens — Screenshot Full View',
+      autoHideMenuBar: true,
+      backgroundColor: '#000000',
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+    viewWin.loadURL(dataUrl);
+  });
 }
 
 // ── System Tray ───────────────────────────────────────────────

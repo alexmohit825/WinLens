@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('winlens', {
   // Set always-on-top (user toggle)
   setAlwaysOnTop: (val) => ipcRenderer.send('set-always-on-top', val),
 
+  // View full screenshot in dedicated viewer window
+  viewFullScreenshot: (dataUrl) => ipcRenderer.invoke('view-full-screenshot', dataUrl),
+
   // Listen for screenshot data from main process
   onScreenshot: (callback) => {
     ipcRenderer.on('screenshot-captured', (_, dataUrl) => callback(dataUrl));

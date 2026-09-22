@@ -52,12 +52,14 @@
 
     <!-- SCREENSHOT PREVIEW -->
     <div id="screenshot-section" class="hidden">
-      <div id="screenshot-card" class="screenshot-card" role="button" title="Click to view full size" aria-label="Screenshot preview">
-        <img id="screenshot-img" src="" alt="Captured screen" />
-        <div class="screenshot-overlay"><span>🔍 View Full Size</span></div>
+      <div class="screenshot-container">
+        <div id="screenshot-card" class="screenshot-card" role="button" title="Click to view full size" aria-label="Screenshot preview">
+          <img id="screenshot-img" src="" alt="Captured screen" />
+          <div class="screenshot-overlay"><span>🔍 View Full Size</span></div>
+        </div>
         <div class="screenshot-meta">
           <span id="screenshot-time" class="screenshot-time"></span>
-          <button id="btn-recapture" class="recapture-btn" title="Capture new screenshot">↺ Recapture</button>
+          <button id="btn-recapture" class="recapture-btn" type="button" title="Capture new screenshot">↺ Recapture</button>
         </div>
       </div>
     </div>
@@ -103,6 +105,7 @@
         <h3>Analyzing your screen…</h3>
         <p>Reading the interface and preparing your answer</p>
         <p id="analyzing-timer">0.0s</p>
+        <button id="btn-stop-analyzing" class="btn-stop" type="button" aria-label="Cancel analysis">⏹ Stop Analysis</button>
       </div>
     </div>
 

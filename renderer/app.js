@@ -73,6 +73,8 @@ const state = {
   isListening: false,
   isPinned: true,
   recognition: null,
+  abortController: null,
+  currentQuestion: '',
 };
 
 // ── DOM ───────────────────────────────────────────────────────
@@ -193,12 +195,35 @@ function startTimer(){
 }
 function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
 
+function stopAnalysis() {
+  if (state.abortController) {
+    try { state.abortController.abort(); } catch {}
+    state.abortController = null;
+  }
+  stopTimer();
+  state.isAnalyzing = false;
+  toast('⏹ Analysis cancelled');
+  setSection(state.screenshot ? 'question' : 'welcome');
+  const qi = $('question-input');
+  if (qi && state.currentQuestion) {
+    qi.value = state.currentQuestion;
+    qi.focus();
+  }
+}
+
 // ── API Call ──────────────────────────────────────────────────
 async function askAI(question) {
   if (!state.screenshot) { toast('No screenshot yet — press Alt+Shift+W to capture'); return; }
   if (!question.trim()) { toast('Enter or speak a question first.'); return; }
   if (state.isAnalyzing) return;
   state.isAnalyzing = true;
+  state.currentQuestion = question.trim();
+
+  // Create abort controller for request cancellation
+  if (state.abortController) {
+    try { state.abortController.abort(); } catch {}
+  }
+  state.abortController = new AbortController();
 
   setSection('analyzing');
   startTimer();
@@ -207,6 +232,7 @@ async function askAI(question) {
     const res = await fetch(`${CONFIG.WORKER_URL}/api/analyze`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
+      signal: state.abortController.signal,
       body: JSON.stringify({
         image_base64: state.screenshot,
         question: question.trim(),
@@ -227,10 +253,15 @@ async function askAI(question) {
     setSection('response');
   } catch(err) {
     stopTimer();
+    if (err.name === 'AbortError') {
+      // Clean cancellation by user — stopAnalysis already notified UI
+      return;
+    }
     toast(`⚠️ ${err.message||'Analysis failed. Check your connection.'}`);
     setSection(state.screenshot ? 'question' : 'welcome');
   } finally {
     state.isAnalyzing = false;
+    state.abortController = null;
   }
 }
 
@@ -283,13 +314,21 @@ async function init() {
   $('btn-capture-welcome')?.addEventListener('click', () => window.winlens.captureScreen());
 
   // Recapture button
-  $('btn-recapture')?.addEventListener('click', () => window.winlens.captureScreen());
+  $('btn-recapture')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.winlens.captureScreen();
+  });
 
-  // Click screenshot to expand (show full image)
+  // Cancel / Stop analysis button
+  $('btn-stop-analyzing')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    stopAnalysis();
+  });
+
+  // Click screenshot to expand (show full image in dedicated viewer window)
   $('screenshot-card')?.addEventListener('click', () => {
     if (state.screenshotDataUrl) {
-      const w = window.open('', '_blank', 'width=1200,height=800');
-      w?.document.write(`<html><body style="margin:0;background:#000"><img src="${state.screenshotDataUrl}" style="max-width:100%;max-height:100vh;display:block;margin:auto"></body></html>`);
+      window.winlens.viewFullScreenshot(state.screenshotDataUrl);
     }
   });
 
