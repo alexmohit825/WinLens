@@ -10,6 +10,8 @@ const {
 } = require('electron');
 const path = require('path');
 
+app.name = 'WinLens';
+
 // ── Config ────────────────────────────────────────────────────
 const HOTKEY = 'Alt+Shift+W';
 const WINDOW_WIDTH = 440;
@@ -127,8 +129,10 @@ function setupIPC() {
 
 // ── System Tray ───────────────────────────────────────────────
 function createTray() {
-  const iconPath = path.join(__dirname, 'build', 'icon.png');
-  const img = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+  const iconPath = process.platform === 'win32'
+    ? path.join(__dirname, 'build', 'icon.ico')
+    : path.join(__dirname, 'build', 'icon.png');
+  const img = nativeImage.createFromPath(iconPath);
   tray = new Tray(img);
   tray.setToolTip(`WinLens  •  ${HOTKEY} to capture`);
 

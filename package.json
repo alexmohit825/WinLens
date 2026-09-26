@@ -23,12 +23,14 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
-      "build/icon.png"
+      "build/icon.png",
+      "build/icon.ico"
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "build/icon.png",
-      "requestedExecutionLevel": "asInvoker"
+      "target": [{ "target": "dir", "arch": ["x64"] }, { "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": true,
