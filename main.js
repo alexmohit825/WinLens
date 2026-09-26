@@ -175,7 +175,13 @@ app.whenReady().then(() => {
   mainWindow.show();
 });
 
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => {
+  if (app.isReady()) {
+    try {
+      globalShortcut.unregisterAll();
+    } catch (_) {}
+  }
+});
 
 app.on('window-all-closed', () => {
   // Keep running in tray on Windows
@@ -186,7 +192,7 @@ app.on('window-all-closed', () => {
 // Prevent multiple instances
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
-  app.quit();
+  app.exit(0);
 } else {
   app.on('second-instance', () => {
     if (mainWindow) {
